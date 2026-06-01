@@ -305,5 +305,17 @@ drop.addEventListener('drop', (ev) => {
 });
 drop.addEventListener('click', async () => { const p = await api.pickAudio(); if (p) run(p); });
 
+// ---------- update check ----------
+async function checkForUpdate() {
+  let u;
+  try { u = await api.checkUpdate(); } catch (_) { return; }
+  if (!u || !u.available) return;
+  $('updateText').textContent = `Note Pilot ${u.version} is available.`;
+  $('updateBanner').classList.remove('hidden');
+  $('updateDownload').onclick = () => api.openRelease(u.url);
+  $('updateDismiss').onclick = () => $('updateBanner').classList.add('hidden');
+}
+
 refreshModelNote();
 refreshLibrary();
+checkForUpdate();

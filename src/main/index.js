@@ -1,7 +1,8 @@
 // Note Pilot — Electron main process (M1: transcription pipeline).
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { checkForUpdate } = require('./updates');
 
 const { dirs, modelPath, vadModelPath, resolveWhisperCli, ensureDir } = require('./paths');
 const { decodeToWav, isSupported } = require('./audio');
@@ -150,6 +151,17 @@ ipcMain.handle('lecture:delete', (_evt, id) => {
   const audioPath = db.deleteLecture(id);            // removes DB rows (segments cascade)
   if (audioPath) { try { fs.unlinkSync(audioPath); } catch (_) { /* file already gone */ } }
   return { ok: true };
+});
+
+// --- IPC: updates ---
+ipcMain.handle('update:check', () => checkForUpdate(app.getVersion()));
+ipcMain.handle('update:open', (_evt, url) => {
+  // Only ever open our own release pages.
+  if (typeof url === 'string' && url.startsWith('https://github.com/jarcos/note-pilot/')) {
+    shell.openExternal(url);
+    return { ok: true };
+  }
+  return { ok: false };
 });
 
 // --- IPC: settings ---

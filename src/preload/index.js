@@ -28,6 +28,10 @@ contextBridge.exposeInMainWorld('notePilot', {
   moveLecture: (id, courseId) => ipcRenderer.invoke('lecture:move', { id, courseId }),
   deleteLecture: (id) => ipcRenderer.invoke('lecture:delete', id),
 
+  // updates
+  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  openRelease: (url) => ipcRenderer.invoke('update:open', url),
+
   // settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setApiKey: (key) => ipcRenderer.invoke('settings:setKey', key),

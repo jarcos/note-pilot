@@ -52,6 +52,9 @@
     .seg { display:flex; gap:.75rem; padding:.3rem 0; border-bottom:1px solid #f0f0f2; font-size:.92rem; }
     .ts { color:var(--blue); font-variant-numeric:tabular-nums; flex:0 0 56px; }
     .empty { color:var(--muted); padding:2rem 0; text-align:center; }
+    #updateBanner { display:flex; align-items:center; gap:.6rem; background:#eaf3ff; border:1px solid #cfe2ff;
+                    color:#0a4ea3; border-radius:10px; padding:.5rem .8rem; margin:0 0 1rem; font-size:.9rem; }
+    #updateBanner #updateText { flex:1; }
     .export-bar { display:flex; align-items:center; gap:.5rem; margin:.5rem 0 0; }
     .gen-bar { display:flex; align-items:center; gap:.6rem; margin:.4rem 0 1rem; }
     .gen-status { color:var(--muted); font-size:.85rem; font-variant-numeric:tabular-nums; }
@@ -95,6 +98,12 @@
   </aside>
 
   <main>
+    <div id="updateBanner" class="hidden">
+      <span id="updateText"></span>
+      <button id="updateDownload" class="mini">Download</button>
+      <button id="updateDismiss" class="mini ghost">Dismiss</button>
+    </div>
+
     <div id="drop">Drop a lecture audio file here, or click to choose<br/><small>m4a · mp3 · wav</small></div>
     <div class="row">
       <label>Language

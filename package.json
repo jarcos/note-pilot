@@ -36,8 +36,19 @@
     "mac": {
       "target": { "target": "dmg", "arch": "arm64" },
       "category": "public.app-category.education",
+      "icon": "build/icon.png",
       "identity": null,
       "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "Note Pilot",
+      "background": "build/background.png",
+      "iconSize": 120,
+      "window": { "width": 660, "height": 420 },
+      "contents": [
+        { "x": 165, "y": 200, "type": "file" },
+        { "x": 495, "y": 200, "type": "link", "path": "/Applications" }
+      ]
     }
   }
 }

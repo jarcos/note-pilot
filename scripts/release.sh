@@ -11,6 +11,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 VERSION="${1:-v0.1.0}"
+NUM="${VERSION#v}"   # strip leading 'v' -> 0.1.2
+
+echo "==> [0/4] Sync package.json version to $NUM (so tag, DMG name, and in-app version all match)"
+npm version "$NUM" --no-git-tag-version --allow-same-version >/dev/null
+git add package.json package-lock.json 2>/dev/null || true
+git commit -q -m "Release $VERSION" 2>/dev/null || true
 
 echo "==> [1/4] Build self-contained whisper-cli bundle"
 bash scripts/package-whisper.sh

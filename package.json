@@ -1,6 +1,6 @@
 {
   "name": "note-pilot",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Turn lecture recordings into transcripts, summaries, and structured study notes. Local Whisper + OpenRouter.",
   "main": "src/main/index.js",
   "author": "José",
@@ -28,13 +28,19 @@
     "appId": "com.josearcos.notepilot",
     "productName": "Note Pilot",
     "afterPack": "scripts/afterpack-adhoc-sign.js",
-    "files": ["src/**/*", "package.json"],
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
     "asarUnpack": [
       "node_modules/ffmpeg-static/**",
       "node_modules/better-sqlite3/**"
     ],
     "mac": {
-      "target": { "target": "dmg", "arch": "arm64" },
+      "target": {
+        "target": "dmg",
+        "arch": "arm64"
+      },
       "category": "public.app-category.education",
       "icon": "build/icon.png",
       "identity": null,
@@ -44,10 +50,22 @@
       "title": "Note Pilot",
       "background": "build/background.png",
       "iconSize": 120,
-      "window": { "width": 660, "height": 420 },
+      "window": {
+        "width": 660,
+        "height": 420
+      },
       "contents": [
-        { "x": 165, "y": 200, "type": "file" },
-        { "x": 495, "y": 200, "type": "link", "path": "/Applications" }
+        {
+          "x": 165,
+          "y": 200,
+          "type": "file"
+        },
+        {
+          "x": 495,
+          "y": 200,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     }
   }

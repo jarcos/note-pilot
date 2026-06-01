@@ -21,7 +21,10 @@ mkdir -p "$WORK" "$OUT"
 echo "==> 1/5 Clone + build whisper.cpp (Metal)"
 [ -d "$WORK/whisper.cpp" ] || git clone --depth 1 https://github.com/ggerganov/whisper.cpp.git "$WORK/whisper.cpp"
 cd "$WORK/whisper.cpp"
-cmake -B build -DGGML_METAL=ON -DBUILD_SHARED_LIBS=ON >/dev/null
+# GGML_NATIVE=OFF -> portable baseline (don't tune for the build machine's exact
+# CPU), so the binary runs across all Apple Silicon generations, not just this one.
+# Metal does the heavy lifting, so the CPU-tuning loss is negligible.
+cmake -B build -DGGML_METAL=ON -DBUILD_SHARED_LIBS=ON -DGGML_NATIVE=OFF >/dev/null
 cmake --build build -j --config Release >/dev/null
 BIN="$(find build -name whisper-cli -type f | head -1)"
 [ -x "$BIN" ] || { echo "build failed: whisper-cli not found"; exit 1; }

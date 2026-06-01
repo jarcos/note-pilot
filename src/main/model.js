@@ -21,6 +21,12 @@ const VAD_MODEL_URL =
 const WHISPER_CLI_URL = process.env.NOTEPILOT_WHISPER_URL
   || 'https://github.com/jarcos/note-pilot/releases/latest/download/whisper-cli-macos-arm64.tar.gz';
 
+// SHA-256 integrity pins for the (stable, versioned) model files. When set, a
+// download whose hash doesn't match is rejected. Leave null to fall back to a
+// size check. Populate via: bash scripts/compute-model-hashes.sh
+const MODEL_SHA256 = null; // ggml-large-v3-turbo.bin
+const VAD_SHA256 = null;   // ggml-silero-v5.1.2.bin
+
 function fileBigEnough(p, minBytes) {
   try { return fs.statSync(p).size >= minBytes; } catch { return false; }
 }
@@ -54,7 +60,7 @@ function sha256File(file) {
  * Generic resumable download with progress.
  * @returns {Promise<string>} final path
  */
-function downloadFile({ url, finalPath, minBytes = 1, onProgress = () => {} }) {
+function downloadFile({ url, finalPath, minBytes = 1, expectedSha = null, onProgress = () => {} }) {
   const partPath = finalPath + '.part';
   return new Promise((resolve, reject) => {
     if (fileBigEnough(finalPath, minBytes)) return resolve(finalPath);
@@ -84,12 +90,23 @@ function downloadFile({ url, finalPath, minBytes = 1, onProgress = () => {} }) {
       res.pipe(out);
       out.on('error', reject);
       res.on('error', reject);
-      out.on('finish', () => {
-        if (totalBytes && received < totalBytes) {
-          return reject(new Error(`Incomplete download (${received}/${totalBytes}). Re-run to resume.`));
-        }
-        try { fs.renameSync(partPath, finalPath); resolve(finalPath); }
-        catch (e) { reject(e); }
+      out.on('finish', async () => {
+        try {
+          if (totalBytes && received < totalBytes) {
+            return reject(new Error(`Incomplete download (${received}/${totalBytes}). Re-run to resume.`));
+          }
+          if (expectedSha) {
+            const got = await sha256File(partPath);
+            if (got.toLowerCase() !== expectedSha.toLowerCase()) {
+              fs.unlinkSync(partPath);
+              return reject(new Error(
+                `Checksum mismatch for ${path.basename(finalPath)} `
+                + `(expected ${expectedSha.slice(0, 12)}…, got ${got.slice(0, 12)}…). Re-run to retry.`));
+            }
+          }
+          fs.renameSync(partPath, finalPath);
+          resolve(finalPath);
+        } catch (e) { reject(e); }
       });
     }, reject);
   });
@@ -103,14 +120,14 @@ function vadModelExists() { return fileBigEnough(vadModelPath(), 100 * 1024); }
 function downloadModel(onProgress = () => {}) {
   return downloadFile({
     url: WHISPER_MODEL_URL, finalPath: modelPath(),
-    minBytes: 100 * 1024 * 1024, onProgress,
+    minBytes: 100 * 1024 * 1024, expectedSha: MODEL_SHA256, onProgress,
   });
 }
 
 function downloadVadModel(onProgress = () => {}) {
   return downloadFile({
     url: VAD_MODEL_URL, finalPath: vadModelPath(),
-    minBytes: 100 * 1024, onProgress,
+    minBytes: 100 * 1024, expectedSha: VAD_SHA256, onProgress,
   });
 }
 

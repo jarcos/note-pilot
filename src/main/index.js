@@ -28,6 +28,11 @@ function createWindow() {
     },
   });
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+
+  // Hardening: the renderer only ever shows our local page. Deny any attempt to
+  // open new windows or navigate away (defense-in-depth against injected links).
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  mainWindow.webContents.on('will-navigate', (e) => e.preventDefault());
 }
 
 function send(channel, payload) {

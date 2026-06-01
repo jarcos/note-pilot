@@ -24,7 +24,11 @@ const DOC_CSS = `
 
 function buildHtml({ title, subtitle, markdown }) {
   const body = renderMarkdown(markdown, esc);
+  // Restrictive CSP: the export is styled static text/tables only — no scripts,
+  // no remote resources. Defense-in-depth even though model output is escaped.
+  const csp = "default-src 'none'; style-src 'unsafe-inline'; img-src data:";
   return `<!doctype html><html><head><meta charset="utf-8">`
+    + `<meta http-equiv="Content-Security-Policy" content="${csp}">`
     + `<style>${DOC_CSS}</style></head><body>`
     + `<h1>${esc(title)}</h1>`
     + (subtitle ? `<div class="meta">${esc(subtitle)}</div>` : '')

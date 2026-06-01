@@ -28,9 +28,11 @@ contextBridge.exposeInMainWorld('notePilot', {
   moveLecture: (id, courseId) => ipcRenderer.invoke('lecture:move', { id, courseId }),
   deleteLecture: (id) => ipcRenderer.invoke('lecture:delete', id),
 
-  // updates
-  checkUpdate: () => ipcRenderer.invoke('update:check'),
-  openRelease: (url) => ipcRenderer.invoke('update:open', url),
+  // updates (electron-updater)
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateAvailable: (cb) => { const h = (_e, p) => cb(p); ipcRenderer.on('update:available', h); return () => ipcRenderer.removeListener('update:available', h); },
+  onUpdateProgress: (cb) => { const h = (_e, p) => cb(p); ipcRenderer.on('update:progress', h); return () => ipcRenderer.removeListener('update:progress', h); },
+  onUpdateReady: (cb) => { const h = (_e, p) => cb(p); ipcRenderer.on('update:ready', h); return () => ipcRenderer.removeListener('update:ready', h); },
 
   // settings
   getSettings: () => ipcRenderer.invoke('settings:get'),

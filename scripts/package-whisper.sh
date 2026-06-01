@@ -70,6 +70,13 @@ done
 install_name_tool -add_rpath "@loader_path" whisper-cli 2>/dev/null || true
 chmod 755 whisper-cli
 
+# install_name_tool invalidates code signatures — re-sign. Prefer Developer ID
+# (so the helper is properly signed for distribution); fall back to ad-hoc.
+SIGN_ID="$(security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Developer ID Application/{print $2; exit}')"
+if [ -n "$SIGN_ID" ]; then IDENT="$SIGN_ID"; OPTS="--options runtime --timestamp"; echo "   re-signing with Developer ID: $SIGN_ID"; else IDENT="-"; OPTS=""; echo "   re-signing ad-hoc (no Developer ID found)"; fi
+for f in *.dylib; do codesign --force $OPTS -s "$IDENT" "$f" 2>/dev/null || true; done
+codesign --force $OPTS -s "$IDENT" whisper-cli 2>/dev/null || true
+
 echo "==> 5/5 Smoke test + package"
 ./whisper-cli --help >/dev/null 2>&1 && echo "   bundle runs standalone OK" || echo "   WARN: standalone run failed — inspect otool -L whisper-cli"
 TAR="$OUT/whisper-cli-macos-arm64.tar.gz"

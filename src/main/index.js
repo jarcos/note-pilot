@@ -1,8 +1,8 @@
 // Note Pilot — Electron main process (M1: transcription pipeline).
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { checkForUpdate } = require('./updates');
+const { initAutoUpdate } = require('./autoupdate');
 
 const { dirs, modelPath, vadModelPath, resolveWhisperCli, ensureDir } = require('./paths');
 const { decodeToWav, isSupported } = require('./audio');
@@ -153,17 +153,6 @@ ipcMain.handle('lecture:delete', (_evt, id) => {
   return { ok: true };
 });
 
-// --- IPC: updates ---
-ipcMain.handle('update:check', () => checkForUpdate(app.getVersion()));
-ipcMain.handle('update:open', (_evt, url) => {
-  // Only ever open our own release pages.
-  if (typeof url === 'string' && url.startsWith('https://github.com/jarcos/note-pilot/')) {
-    shell.openExternal(url);
-    return { ok: true };
-  }
-  return { ok: false };
-});
-
 // --- IPC: settings ---
 ipcMain.handle('settings:get', () => publicSettings());
 ipcMain.handle('settings:setKey', (_evt, key) => {
@@ -223,6 +212,7 @@ app.whenReady().then(() => {
   ensureDir(app.getPath('userData'));
   db.init();
   createWindow();
+  initAutoUpdate(send); // silent auto-update in packaged signed builds
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 

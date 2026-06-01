@@ -1,46 +1,50 @@
 #!/usr/bin/env bash
-# One-command release for Note Pilot (run on your Apple Silicon Mac).
-# Builds the self-contained whisper-cli bundle, builds the unsigned DMG, and
-# publishes a GitHub Release with BOTH assets. The installed app downloads the
-# whisper bundle from `releases/latest/download/...` on first run.
+# One-command SIGNED + NOTARIZED release for Note Pilot (Apple Silicon Mac).
+# Builds the whisper-cli bundle, builds + signs + notarizes the app, and
+# publishes a GitHub Release (DMG + zip + latest-mac.yml for auto-update,
+# plus the whisper bundle the app downloads on first run).
 #
-# Requirements: gh (authenticated), node/npm, cmake, ffmpeg. Apple Silicon.
-# Usage:  bash scripts/release.sh [version]      e.g. bash scripts/release.sh v0.1.0
+# Requirements:
+#   - Developer ID Application cert installed (Xcode → Accounts → Manage Certificates)
+#   - gh authenticated; cmake, ffmpeg, node installed
+#   - Notarization env vars set:
+#       export APPLE_ID="you@example.com"
+#       export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
+#       export APPLE_TEAM_ID="ABCDE12345"
+#
+# Usage:  bash scripts/release.sh v0.1.3
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT"
-VERSION="${1:-v0.1.0}"
-NUM="${VERSION#v}"   # strip leading 'v' -> 0.1.2
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
+VERSION="${1:-v0.1.0}"; NUM="${VERSION#v}"
 
-echo "==> [0/4] Sync package.json version to $NUM (so tag, DMG name, and in-app version all match)"
+echo "==> Preflight"
+command -v gh >/dev/null || { echo "gh not found"; exit 1; }
+security find-identity -v -p codesigning | grep -q "Developer ID Application" \
+  || { echo "No 'Developer ID Application' certificate in Keychain. Create one in Xcode → Settings → Accounts → Manage Certificates."; exit 1; }
+: "${APPLE_ID:?set APPLE_ID}"; : "${APPLE_APP_SPECIFIC_PASSWORD:?set APPLE_APP_SPECIFIC_PASSWORD}"; : "${APPLE_TEAM_ID:?set APPLE_TEAM_ID}"
+
+echo "==> [0/4] Sync package.json version to $NUM"
 npm version "$NUM" --no-git-tag-version --allow-same-version >/dev/null
 git add package.json package-lock.json 2>/dev/null || true
 git commit -q -m "Release $VERSION" 2>/dev/null || true
+git push -q origin main || true
 
-echo "==> [1/4] Build self-contained whisper-cli bundle"
+echo "==> [1/4] Build + sign self-contained whisper-cli bundle"
 bash scripts/package-whisper.sh
 WHISPER_TAR="$ROOT/dist-whisper/whisper-cli-macos-arm64.tar.gz"
 [ -f "$WHISPER_TAR" ] || { echo "whisper bundle missing"; exit 1; }
 
-echo "==> [2/4] Install deps + rebuild native module, then build DMG"
+echo "==> [2/4] Install deps"
 npm install
-npm run rebuild
-npm run dist
-DMG="$(ls -t dist/*.dmg | head -1)"
-[ -f "$DMG" ] || { echo "DMG not produced"; exit 1; }
-echo "    DMG: $DMG"
 
-echo "==> [3/4] Push any pending commits"
-git push origin main 2>/dev/null || true
+echo "==> [3/4] Build, sign, notarize, and publish (DMG + zip + latest-mac.yml)"
+export GH_TOKEN="$(gh auth token)"
+npx electron-builder --mac --arm64 --publish always
 
-echo "==> [4/4] Create GitHub Release $VERSION with both assets"
-gh release create "$VERSION" \
-  "$DMG#Note Pilot (macOS, Apple Silicon, unsigned)" \
-  "$WHISPER_TAR#whisper-cli-macos-arm64.tar.gz" \
-  --title "Note Pilot $VERSION" \
-  --notes "Local Whisper transcription + OpenRouter summaries/notes. Apple Silicon only. Unsigned — right-click → Open on first launch. The app downloads the Whisper model and speech engine on first transcription."
+echo "==> [4/4] Attach the whisper bundle to the release"
+gh release upload "$VERSION" "$WHISPER_TAR#whisper-cli-macos-arm64.tar.gz" --clobber
 
 echo ""
-echo "Done. Release: https://github.com/jarcos/note-pilot/releases/tag/$VERSION"
-echo "The DMG is attached; the app will fetch whisper-cli + models on first run."
+echo "Done. Signed + notarized release: https://github.com/jarcos/note-pilot/releases/tag/$VERSION"
+echo "Installed apps (>= this version) will now auto-update silently."

@@ -27,16 +27,10 @@ Note Pilot is a desktop app for students. Drop in a recording of a lecture and i
 
 1. Go to the [**Releases**](../../releases) page and download the latest `Note Pilot.dmg`.
 2. Open the DMG and drag **Note Pilot** to Applications.
-3. **First launch (important):** the app isn't notarized by Apple, so macOS Gatekeeper will warn you. **Right-click (or Control-click) the app → Open → Open.** You only need to do this once.
-
-   **If macOS says “Note Pilot is damaged and can’t be opened”**, that's the quarantine flag on a downloaded unsigned app — it's not actually damaged. Remove the flag once, in Terminal:
-
-   ```bash
-   xattr -dr com.apple.quarantine "/Applications/Note Pilot.app"
-   ```
-
-   Then open it normally. (None of this would be needed if the app were notarized, which requires a paid Apple Developer account.)
+3. Launch it — the app is **signed and notarized by Apple**, so it opens normally with no security warnings.
 4. On first transcription, Note Pilot downloads the Whisper model (~1.5 GB) and the speech-detection components. This is one-time.
+
+**Updates are automatic.** When a new version is released, the app downloads it in the background and shows a "Restart to update" banner — no manual re-download.
 
 ### Option B — Run from source
 
@@ -89,7 +83,6 @@ Note Pilot defaults to OpenRouter's **`openrouter/free`** auto-router, which pic
 ## Limitations
 
 - Apple Silicon only (for now).
-- The downloadable app is **unsigned** — hence the one-time right-click-to-open step.
 - Summaries/Notes are AI-generated: spot-check important facts against the transcript.
 
 ---

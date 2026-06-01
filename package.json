@@ -22,12 +22,17 @@
   "dependencies": {
     "better-sqlite3": "^11.0.0",
     "ffmpeg-static": "^5.2.0",
-    "html-to-docx": "^1.8.0"
+    "html-to-docx": "^1.8.0",
+    "electron-updater": "^6.3.0"
   },
   "build": {
     "appId": "com.josearcos.notepilot",
     "productName": "Note Pilot",
-    "afterPack": "scripts/afterpack-adhoc-sign.js",
+    "publish": {
+      "provider": "github",
+      "owner": "jarcos",
+      "repo": "note-pilot"
+    },
     "files": [
       "src/**/*",
       "package.json"
@@ -37,14 +42,17 @@
       "node_modules/better-sqlite3/**"
     ],
     "mac": {
-      "target": {
-        "target": "dmg",
-        "arch": "arm64"
-      },
+      "target": [
+        { "target": "dmg", "arch": "arm64" },
+        { "target": "zip", "arch": "arm64" }
+      ],
       "category": "public.app-category.education",
       "icon": "build/icon.png",
-      "identity": null,
-      "gatekeeperAssess": false
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
     },
     "dmg": {
       "title": "Note Pilot",

@@ -1,0 +1,41 @@
+{
+  "name": "note-pilot",
+  "version": "0.0.1",
+  "description": "Turn lecture recordings into transcripts, summaries, and structured study notes. Local Whisper + OpenRouter.",
+  "main": "src/main/index.js",
+  "author": "José",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "spike:sqlite": "node spikes/spikeB_sqlite.js",
+    "spike:openrouter": "node spikes/spikeC_openrouter.mjs",
+    "spike:whisper": "bash spikes/spikeA_whisper.sh",
+    "dist": "electron-builder --mac --arm64"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "@electron/rebuild": "^3.6.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "ffmpeg-static": "^5.2.0",
+    "html-to-docx": "^1.8.0"
+  },
+  "build": {
+    "appId": "com.josearcos.notepilot",
+    "productName": "Note Pilot",
+    "files": ["src/**/*", "package.json"],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**",
+      "node_modules/better-sqlite3/**"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.education",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    }
+  }
+}

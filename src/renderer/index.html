@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Note Pilot</title>
+  <style>
+    :root { --blue:#0071e3; --ink:#1d1d1f; --muted:#6e6e73; --line:#d2d2d7; --bg:#f5f5f7; --danger:#d70015; }
+    * { box-sizing: border-box; }
+    body { font-family:-apple-system,system-ui,sans-serif; margin:0; color:var(--ink); display:flex; height:100vh; }
+    aside { width:300px; border-right:1px solid var(--line); padding:1rem; overflow:auto; }
+    main { flex:1; padding:1.25rem 1.75rem; overflow:auto; }
+    h1 { font-size:1.25rem; margin:0 0 .75rem; }
+    .libhead { display:flex; align-items:center; justify-content:space-between; margin:1rem 0 .25rem; }
+    .libhead h2 { font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0; }
+    button { font-size:.9rem; padding:.5rem .9rem; border-radius:8px; border:1px solid var(--line);
+             background:var(--blue); color:#fff; cursor:pointer; }
+    button.ghost { background:#fff; color:var(--ink); }
+    button.mini { padding:.15rem .45rem; font-size:.78rem; }
+    button.link { background:none; border:none; color:var(--blue); padding:.1rem .3rem; cursor:pointer; font-size:.8rem; }
+    button.danger { color:var(--danger); }
+    #drop { border:2px dashed var(--line); border-radius:14px; padding:1.5rem; text-align:center; color:var(--muted);
+            cursor:pointer; transition:.15s; }
+    #drop.hot { border-color:var(--blue); color:var(--blue); background:#f0f7ff; }
+    .row { display:flex; gap:.5rem; align-items:center; margin:.7rem 0; flex-wrap:wrap; }
+    select { padding:.4rem .5rem; border-radius:8px; border:1px solid var(--line); background:#fff; }
+    #bar { height:8px; background:var(--bg); border-radius:99px; overflow:hidden; margin:.3rem 0; }
+    #fill { height:100%; width:0; background:var(--blue); transition:width .2s; }
+    #status { color:var(--muted); font-size:.85rem; min-height:1.1em; font-variant-numeric:tabular-nums; }
+    .pill { font-size:.72rem; background:var(--bg); color:var(--muted); border-radius:99px; padding:.1rem .5rem; }
+    .hidden { display:none; }
+
+    /* sidebar courses */
+    .course { margin-bottom:.4rem; }
+    .course-hd { display:flex; align-items:center; gap:.3rem; padding:.3rem .2rem; }
+    .course-hd .name { font-weight:600; font-size:.9rem; flex:1; }
+    .course-hd .count { color:var(--muted); font-size:.78rem; }
+    .course-actions { display:none; gap:.1rem; }
+    .course-hd:hover .course-actions { display:flex; }
+    .lect { padding:.4rem .55rem; margin-left:.4rem; border-radius:8px; cursor:pointer; font-size:.88rem; }
+    .lect:hover { background:var(--bg); }
+    .lect.active { background:#e8f1fd; }
+    .lect small { color:var(--muted); display:block; font-size:.74rem; }
+
+    /* detail */
+    .detail-bar { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-top:.5rem; }
+    .detail-bar h2 { font-size:1.05rem; margin:0; flex:1; }
+    .tabs { display:flex; gap:.3rem; border-bottom:1px solid var(--line); margin:.8rem 0; }
+    .tab { padding:.45rem .8rem; cursor:pointer; border-bottom:2px solid transparent; color:var(--muted); font-size:.9rem; }
+    .tab.active { color:var(--ink); border-bottom-color:var(--blue); font-weight:600; }
+    .seg { display:flex; gap:.75rem; padding:.3rem 0; border-bottom:1px solid #f0f0f2; font-size:.92rem; }
+    .ts { color:var(--blue); font-variant-numeric:tabular-nums; flex:0 0 56px; }
+    .empty { color:var(--muted); padding:2rem 0; text-align:center; }
+    .export-bar { display:flex; align-items:center; gap:.5rem; margin:.5rem 0 0; }
+    .gen-bar { display:flex; align-items:center; gap:.6rem; margin:.4rem 0 1rem; }
+    .gen-status { color:var(--muted); font-size:.85rem; font-variant-numeric:tabular-nums; }
+    button:disabled { opacity:.55; cursor:default; }
+    .spinner { width:15px; height:15px; border:2px solid var(--line); border-top-color:var(--blue);
+               border-radius:50%; display:inline-block; animation:spin .7s linear infinite; vertical-align:-2px; }
+    .spinner.hidden { display:none; }  /* out-specify the .spinner display rule */
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .md.loading { opacity:.5; }
+    .md { font-size:.94rem; line-height:1.5; }
+    .md h1,.md h2,.md h3 { margin:1rem 0 .4rem; }
+    .md h1 { font-size:1.2rem; } .md h2 { font-size:1.05rem; } .md h3 { font-size:.96rem; }
+    .md ul,.md ol { margin:.3rem 0 .6rem 1.2rem; } .md li { margin:.15rem 0; }
+    .md p { margin:.5rem 0; }
+    .md table { border-collapse:collapse; margin:.6rem 0; font-size:.9rem; }
+    .md th,.md td { border:1px solid var(--line); padding:.35rem .6rem; text-align:left; vertical-align:top; }
+    .md th { background:var(--bg); }
+    .md ul ul,.md ul ol,.md ol ul,.md ol ol { margin:.15rem 0 .15rem 1.1rem; }
+
+    /* modal */
+    #overlay { position:fixed; inset:0; background:rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; }
+    #overlay.hidden { display:none; }  /* must out-specify the #overlay rule above */
+    #modal { background:#fff; border-radius:14px; padding:1.25rem; width:340px; box-shadow:0 12px 40px rgba(0,0,0,.2); }
+    #modal h3 { margin:0 0 .6rem; font-size:1rem; }
+    #modal input { width:100%; padding:.55rem .6rem; border:1px solid var(--line); border-radius:8px; font-size:.95rem; }
+    #modal .actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:1rem; }
+  </style>
+</head>
+<body>
+  <aside>
+    <h1>Note Pilot</h1>
+    <div id="modelNote" class="pill">checking model…</div>
+    <div class="libhead">
+      <h2>Library</h2>
+      <span>
+        <button id="settingsBtn" class="mini ghost">⚙ Settings</button>
+        <button id="newCourse" class="mini ghost">+ Course</button>
+      </span>
+    </div>
+    <div id="courses"></div>
+  </aside>
+
+  <main>
+    <div id="drop">Drop a lecture audio file here, or click to choose<br/><small>m4a · mp3 · wav</small></div>
+    <div class="row">
+      <label>Language
+        <select id="lang">
+          <option value="auto">Auto-detect</option>
+          <option value="es" selected>Spanish</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <span id="chosen" class="pill hidden"></span>
+    </div>
+    <div id="bar"><div id="fill"></div></div>
+    <div id="status"></div>
+
+    <div id="detail" class="hidden">
+      <div class="detail-bar">
+        <h2 id="detailTitle"></h2>
+        <button id="renameLect" class="mini ghost">Rename</button>
+        <label class="pill" style="display:flex;align-items:center;gap:.3rem">Course
+          <select id="moveCourse"></select>
+        </label>
+        <button id="deleteLect" class="mini ghost danger">Delete</button>
+      </div>
+      <div class="export-bar">
+        <span class="pill">Export current tab</span>
+        <button id="exportPdf" class="mini ghost">PDF</button>
+        <button id="exportDocx" class="mini ghost">DOCX</button>
+        <span id="exportStatus" class="gen-status"></span>
+      </div>
+      <div class="tabs">
+        <div class="tab active" data-tab="transcript">Transcript</div>
+        <div class="tab" data-tab="summary">Summary</div>
+        <div class="tab" data-tab="notes">Notes</div>
+      </div>
+      <div id="tab-transcript"></div>
+      <div id="tab-summary" class="hidden">
+        <div class="gen-bar"><button class="gen" data-type="summary">Generate summary</button>
+          <span class="spinner hidden" data-type="summary"></span>
+          <span class="gen-status" data-type="summary"></span></div>
+        <div class="md" id="out-summary"></div>
+      </div>
+      <div id="tab-notes" class="hidden">
+        <div class="gen-bar"><button class="gen" data-type="notes">Generate notes</button>
+          <span class="spinner hidden" data-type="notes"></span>
+          <span class="gen-status" data-type="notes"></span></div>
+        <div class="md" id="out-notes"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="overlay" class="hidden">
+    <div id="modal">
+      <h3 id="modalTitle"></h3>
+      <input id="modalInput" type="text" />
+      <div class="actions">
+        <button id="modalCancel" class="ghost">Cancel</button>
+        <button id="modalOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="markdown.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

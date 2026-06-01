@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.spike-whisper/
+
+# Audio & generated media — never commit lecture recordings (privacy/copyright)
+*.wav
+*.m4a
+*.mp3
+*.aac
+*.flac
+*.ogg
+*.mp4
+*.m4b
+
+# Secrets & local state
+config.json
+.env
+
+*.log
+.DS_Store
+_verify.png

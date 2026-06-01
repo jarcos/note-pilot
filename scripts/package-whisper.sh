@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Build a SELF-CONTAINED whisper-cli bundle for Apple Silicon and tar it for
+# upload as a GitHub Release asset. The app downloads this on first run.
+#
+# Why: a Homebrew/cmake whisper-cli links against dylibs in /opt/homebrew that
+# don't exist on a stranger's Mac. This builds from source, collects every
+# non-system dylib next to the binary, and rewrites load paths to @loader_path
+# so the bundle is relocatable.
+#
+# Requirements (on YOUR Mac, one time):  xcode-select --install ; brew install cmake
+# Usage:    bash scripts/package-whisper.sh
+# Output:   dist-whisper/whisper-cli-macos-arm64.tar.gz   <- upload to the Release
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+WORK="$ROOT/.whisper-build"
+OUT="$ROOT/dist-whisper"
+STAGE="$WORK/bundle"
+mkdir -p "$WORK" "$OUT"
+
+echo "==> 1/5 Clone + build whisper.cpp (Metal)"
+[ -d "$WORK/whisper.cpp" ] || git clone --depth 1 https://github.com/ggerganov/whisper.cpp.git "$WORK/whisper.cpp"
+cd "$WORK/whisper.cpp"
+cmake -B build -DGGML_METAL=ON -DBUILD_SHARED_LIBS=ON >/dev/null
+cmake --build build -j --config Release >/dev/null
+BIN="$(find build -name whisper-cli -type f | head -1)"
+[ -x "$BIN" ] || { echo "build failed: whisper-cli not found"; exit 1; }
+
+echo "==> 2/5 Stage binary"
+rm -rf "$STAGE"; mkdir -p "$STAGE"
+cp "$BIN" "$STAGE/whisper-cli"
+
+# Recursively gather non-system dylibs a Mach-O references.
+gather() {
+  local f="$1"
+  otool -L "$f" | tail -n +2 | awk '{print $1}' | while read -r dep; do
+    case "$dep" in
+      /usr/lib/*|/System/*) continue ;;                  # system libs: leave as-is
+    esac
+    local base; base="$(basename "$dep")"
+    # resolve @rpath/@loader_path deps from the build tree
+    local src="$dep"
+    if [[ "$dep" == @* ]]; then
+      src="$(find "$WORK/whisper.cpp/build" -name "$base" | head -1)"
+    fi
+    [ -f "$src" ] || continue
+    if [ ! -f "$STAGE/$base" ]; then
+      cp "$src" "$STAGE/$base"
+      gather "$STAGE/$base"                                # recurse into its deps
+    fi
+  done
+}
+
+echo "==> 3/5 Collect dependent dylibs"
+gather "$STAGE/whisper-cli"
+
+echo "==> 4/5 Rewrite load paths to @loader_path"
+cd "$STAGE"
+for f in *; do
+  [ "$f" = "whisper-cli" ] || install_name_tool -id "@loader_path/$f" "$f" 2>/dev/null || true
+  otool -L "$f" | tail -n +2 | awk '{print $1}' | while read -r dep; do
+    case "$dep" in /usr/lib/*|/System/*) continue ;; esac
+    base="$(basename "$dep")"
+    [ -f "$STAGE/$base" ] && install_name_tool -change "$dep" "@loader_path/$base" "$f" 2>/dev/null || true
+  done
+done
+install_name_tool -add_rpath "@loader_path" whisper-cli 2>/dev/null || true
+chmod 755 whisper-cli
+
+echo "==> 5/5 Smoke test + package"
+./whisper-cli --help >/dev/null 2>&1 && echo "   bundle runs standalone OK" || echo "   WARN: standalone run failed — inspect otool -L whisper-cli"
+TAR="$OUT/whisper-cli-macos-arm64.tar.gz"
+tar -czf "$TAR" -C "$STAGE" .
+echo ""
+echo "Done: $TAR"
+echo "Next: create a GitHub Release and upload this file as an asset named"
+echo "      whisper-cli-macos-arm64.tar.gz (the app fetches releases/latest/download/<that>)."

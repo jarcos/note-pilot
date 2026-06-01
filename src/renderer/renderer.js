@@ -228,13 +228,55 @@ $('newCourse').onclick = async () => {
   if (name) { await api.createCourse(name); refreshLibrary(); }
 };
 
-// settings: enter/update the OpenRouter key
-$('settingsBtn').onclick = async () => {
+// settings: friendly OpenRouter key dialog
+const settingsOverlay = $('settingsOverlay');
+async function openSettings() {
   const s = await api.getSettings();
-  const label = s.hasKey ? `OpenRouter API key (current: ${s.keyHint})` : 'OpenRouter API key';
-  const key = await askText(label);
-  if (key) { await api.setApiKey(key); setStatus('API key saved.'); }
+  const status = $('keyStatus');
+  const removeBtn = $('settingsRemove');
+  const getRow = $('getKeyRow');
+  if (s.hasKey && s.keyHint === 'from env') {
+    status.className = 'key-status set';
+    status.textContent = 'Using a key from your environment (OPENROUTER_API_KEY). Enter a key below to override it.';
+    removeBtn.classList.add('hidden');
+    getRow.classList.add('hidden');
+  } else if (s.hasKey) {
+    status.className = 'key-status set';
+    status.textContent = `A key is saved (ending ${s.keyHint}). Enter a new key to replace it, or remove it.`;
+    removeBtn.classList.remove('hidden');
+    getRow.classList.add('hidden');
+  } else {
+    status.className = 'key-status none';
+    status.textContent = 'No API key set yet — you need one to generate summaries and notes.';
+    removeBtn.classList.add('hidden');
+    getRow.classList.remove('hidden');
+  }
+  const input = $('settingsKey');
+  input.value = ''; input.type = 'password';
+  $('settingsShow').checked = false;
+  settingsOverlay.classList.remove('hidden');
+  input.focus();
+}
+function closeSettings() { settingsOverlay.classList.add('hidden'); }
+
+$('settingsBtn').onclick = openSettings;
+$('settingsCancel').onclick = closeSettings;
+$('settingsShow').onchange = (e) => { $('settingsKey').type = e.target.checked ? 'text' : 'password'; };
+$('getKeyLink').onclick = (e) => { e.preventDefault(); api.openExternal('https://openrouter.ai/keys'); };
+$('settingsSave').onclick = async () => {
+  const v = $('settingsKey').value.trim();
+  if (v) { await api.setApiKey(v); setStatus('API key saved.'); }
+  closeSettings();
 };
+$('settingsRemove').onclick = async () => {
+  await api.setApiKey('');
+  setStatus('API key removed.');
+  closeSettings();
+};
+$('settingsKey').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') $('settingsSave').click();
+  if (e.key === 'Escape') closeSettings();
+});
 
 // generation buttons (Summary / Notes)
 let generating = false;
@@ -280,8 +322,7 @@ $('exportPdf').onclick = () => runExport('pdf');
 $('exportDocx').onclick = () => runExport('docx');
 
 async function askSetKey() {
-  const key = await askText('Enter your OpenRouter API key to generate');
-  if (key) { await api.setApiKey(key); setStatus('API key saved — click Generate again.'); }
+  await openSettings(); // opens the friendly Settings dialog; user saves then clicks Generate again
 }
 
 api.onGenerateProgress((p) => {

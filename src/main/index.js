@@ -1,5 +1,5 @@
 // Note Pilot — Electron main process (M1: transcription pipeline).
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { initAutoUpdate } = require('./autoupdate');
@@ -156,6 +156,16 @@ ipcMain.handle('lecture:delete', (_evt, id) => {
   const audioPath = db.deleteLecture(id);            // removes DB rows (segments cascade)
   if (audioPath) { try { fs.unlinkSync(audioPath); } catch (_) { /* file already gone */ } }
   return { ok: true };
+});
+
+// --- IPC: open an allow-listed external link (e.g. to create an API key) ---
+ipcMain.handle('external:open', (_evt, url) => {
+  const allowed = ['https://openrouter.ai/', 'https://github.com/jarcos/note-pilot'];
+  if (typeof url === 'string' && allowed.some((a) => url.startsWith(a))) {
+    shell.openExternal(url);
+    return { ok: true };
+  }
+  return { ok: false };
 });
 
 // --- IPC: settings ---

@@ -37,6 +37,7 @@ contextBridge.exposeInMainWorld('notePilot', {
   // settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setApiKey: (key) => ipcRenderer.invoke('settings:setKey', key),
+  openExternal: (url) => ipcRenderer.invoke('external:open', url),
 
   // export
   exportDoc: (lectureId, kind, format) => ipcRenderer.invoke('export:run', { lectureId, kind, format }),

@@ -29,7 +29,7 @@
     #fill { height:100%; width:0; background:var(--blue); transition:width .2s; }
     #status { color:var(--muted); font-size:.85rem; min-height:1.1em; font-variant-numeric:tabular-nums; }
     .pill { font-size:.72rem; background:var(--bg); color:var(--muted); border-radius:99px; padding:.1rem .5rem; }
-    .hidden { display:none; }
+    .hidden { display:none !important; }  /* utility must beat ID/element display rules */
 
     /* sidebar courses */
     .course { margin-bottom:.4rem; }
@@ -81,6 +81,24 @@
     #modal h3 { margin:0 0 .6rem; font-size:1rem; }
     #modal input { width:100%; padding:.55rem .6rem; border:1px solid var(--line); border-radius:8px; font-size:.95rem; }
     #modal .actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:1rem; }
+
+    /* settings modal */
+    #settingsOverlay { position:fixed; inset:0; background:rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; }
+    .modal-card { background:#fff; border-radius:14px; padding:1.4rem 1.5rem; width:440px; box-shadow:0 12px 40px rgba(0,0,0,.22); }
+    .modal-card h3 { margin:0 0 .3rem; font-size:1.15rem; }
+    .modal-sub { color:var(--muted); font-size:.85rem; line-height:1.45; margin:0 0 1rem; }
+    .key-status { font-size:.85rem; padding:.55rem .7rem; border-radius:8px; margin-bottom:1rem; line-height:1.4; }
+    .key-status.set { background:#eafaef; color:#1d8a34; }
+    .key-status.none { background:#fff4e5; color:#9a5b00; }
+    .modal-label { font-size:.8rem; font-weight:600; display:block; margin-bottom:.35rem; }
+    .modal-card input[type=password], .modal-card input[type=text] { width:100%; padding:.6rem .65rem;
+      border:1px solid var(--line); border-radius:8px; font-size:.95rem; font-family:ui-monospace,monospace; }
+    .show-row { display:flex; align-items:center; gap:.35rem; font-size:.8rem; color:var(--muted); margin-top:.5rem; }
+    .get-key { font-size:.85rem; margin-top:1rem; color:var(--muted); }
+    .get-key a { color:var(--blue); cursor:pointer; text-decoration:none; }
+    .get-key a:hover { text-decoration:underline; }
+    .modal-card .actions { display:flex; align-items:center; gap:.5rem; margin-top:1.4rem; }
+    .modal-card .actions .spacer { flex:1; }
   </style>
 </head>
 <body>
@@ -161,6 +179,24 @@
       <div class="actions">
         <button id="modalCancel" class="ghost">Cancel</button>
         <button id="modalOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsOverlay" class="hidden">
+    <div class="modal-card">
+      <h3>Settings</h3>
+      <p class="modal-sub">Summaries and notes are generated with a free OpenRouter model. Transcription works offline and needs no key.</p>
+      <div id="keyStatus" class="key-status"></div>
+      <label class="modal-label" for="settingsKey">OpenRouter API key</label>
+      <input id="settingsKey" type="password" placeholder="sk-or-..." autocomplete="off" spellcheck="false" />
+      <label class="show-row"><input type="checkbox" id="settingsShow" /> Show key</label>
+      <div id="getKeyRow" class="get-key">Don't have one yet? <a href="#" id="getKeyLink">Create a free key at openrouter.ai →</a></div>
+      <div class="actions">
+        <button id="settingsRemove" class="ghost danger hidden">Remove key</button>
+        <span class="spacer"></span>
+        <button id="settingsCancel" class="ghost">Cancel</button>
+        <button id="settingsSave">Save</button>
       </div>
     </div>
   </div>

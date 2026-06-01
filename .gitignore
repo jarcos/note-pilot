@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .spike-whisper/
+.whisper-build/
+dist-whisper/
 
 # Audio & generated media — never commit lecture recordings (privacy/copyright)
 *.wav

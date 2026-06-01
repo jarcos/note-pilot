@@ -143,6 +143,26 @@ ipcMain.handle('transcribe:file', async (_evt, { filePath, courseName, lang }) =
 ipcMain.handle('library:list', () => db.listLectures());
 ipcMain.handle('lecture:get', (_evt, id) => db.getLecture(id));
 
+// Load a lecture's stored audio for in-app playback (returned as bytes; the
+// renderer wraps it in a Blob URL). Path comes from the DB, not the renderer.
+const AUDIO_MIME = {
+  '.m4a': 'audio/mp4', '.m4b': 'audio/mp4', '.mp4': 'audio/mp4', '.aac': 'audio/aac',
+  '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.flac': 'audio/flac', '.ogg': 'audio/ogg',
+};
+ipcMain.handle('audio:load', (_evt, lectureId) => {
+  try {
+    const lec = db.getLecture(lectureId);
+    if (!lec || !lec.audio_path || !fs.existsSync(lec.audio_path)) {
+      return { ok: false, error: 'Audio file not found for this lecture.' };
+    }
+    const bytes = fs.readFileSync(lec.audio_path);
+    const mime = AUDIO_MIME[path.extname(lec.audio_path).toLowerCase()] || 'audio/mpeg';
+    return { ok: true, bytes, mime };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 // --- IPC: courses ---
 ipcMain.handle('courses:list', () => db.listCourses());
 ipcMain.handle('course:create', (_evt, name) => db.createCourse(name));

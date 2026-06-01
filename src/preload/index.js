@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('notePilot', {
   // library
   listLectures: () => ipcRenderer.invoke('library:list'),
   getLecture: (id) => ipcRenderer.invoke('lecture:get', id),
+  loadAudio: (id) => ipcRenderer.invoke('audio:load', id),
 
   // courses
   listCourses: () => ipcRenderer.invoke('courses:list'),

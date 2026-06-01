@@ -149,6 +149,47 @@ function renderGen(type, markdown) {
   }
 }
 
+// ---------- synced audio player ----------
+const player = $('player');
+let currentBlobUrl = null;
+let lastPlayingRow = null;
+
+async function setupAudio(lectureId) {
+  player.pause();
+  lastPlayingRow = null;
+  if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
+  player.classList.add('hidden');
+  const r = await api.loadAudio(lectureId);
+  if (!r || !r.ok) return; // no audio → player stays hidden
+  currentBlobUrl = URL.createObjectURL(new Blob([r.bytes], { type: r.mime }));
+  player.src = currentBlobUrl;
+  player.classList.remove('hidden');
+}
+
+function seekTo(ms) {
+  if (ms == null || !currentBlobUrl) return;
+  player.currentTime = ms / 1000;
+  player.play().catch(() => {});
+}
+
+function highlightAt(ms) {
+  if (!currentLecture || !currentLecture.segments) return;
+  const segs = currentLecture.segments;
+  let idx = -1;
+  for (let i = 0; i < segs.length; i++) {
+    const f = segs[i].fromMs; const t = segs[i].toMs;
+    if (f != null && ms >= f && (t == null || ms < t)) { idx = i; break; }
+  }
+  if (idx === -1) return;
+  const row = $('segments').querySelector(`.seg[data-i="${idx}"]`);
+  if (!row || row === lastPlayingRow) return;
+  if (lastPlayingRow) lastPlayingRow.classList.remove('playing');
+  row.classList.add('playing');
+  row.scrollIntoView({ block: 'nearest' });
+  lastPlayingRow = row;
+}
+player.ontimeupdate = () => highlightAt(player.currentTime * 1000);
+
 async function openLecture(id) {
   const lec = await api.getLecture(id);
   if (!lec) return;
@@ -159,15 +200,19 @@ async function openLecture(id) {
   populateMoveSelect(lec.course_id);
   setTab('transcript');
 
-  const wrap = $('tab-transcript');
+  setupAudio(id); // load audio into the player (async, non-blocking)
+  const wrap = $('segments');
   wrap.innerHTML = '';
   if (!lec.segments.length) { wrap.innerHTML = '<div class="empty">No transcript.</div>'; }
-  for (const s of lec.segments) {
+  lec.segments.forEach((s, i) => {
     const row = document.createElement('div');
     row.className = 'seg';
+    row.dataset.i = i;
+    row.title = 'Click to play from here';
     row.innerHTML = `<span class="ts">${fmtTime(s.fromMs)}</span><span>${esc(s.text)}</span>`;
+    row.onclick = () => seekTo(s.fromMs);
     wrap.appendChild(row);
-  }
+  });
   renderGen('summary', lec.summary);
   renderGen('notes', lec.notes);
   document.querySelectorAll('.gen-status').forEach((el) => (el.textContent = ''));

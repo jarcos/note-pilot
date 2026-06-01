@@ -19,3 +19,12 @@ config.json
 *.log
 .DS_Store
 _verify.png
+
+# Internal planning/review docs — kept locally, never published
+M0-Findings.md
+M1-Findings.md
+M3-Findings.md
+M4-Findings.md
+Note-Pilot-Build-Plan.md
+Note-Pilot-Spec.md
+CODE-REVIEW.md

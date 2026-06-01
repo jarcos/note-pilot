@@ -27,6 +27,7 @@
   "build": {
     "appId": "com.josearcos.notepilot",
     "productName": "Note Pilot",
+    "afterPack": "scripts/afterpack-adhoc-sign.js",
     "files": ["src/**/*", "package.json"],
     "asarUnpack": [
       "node_modules/ffmpeg-static/**",

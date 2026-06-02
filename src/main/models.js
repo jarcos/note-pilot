@@ -5,12 +5,25 @@ const https = require('https');
 // Providers whose free models are offered to the user. Edit to taste.
 // Note: Anthropic and most OpenAI models are paid, so those groups will often
 // be empty in a free-only list (OpenAI's open `gpt-oss` models are the exception).
-const ALLOWED_PROVIDERS = ['google', 'deepseek', 'meta-llama', 'openai', 'anthropic'];
+const ALLOWED_PROVIDERS = ['google', 'deepseek', 'meta-llama', 'openai', 'anthropic', 'qwen', 'mistralai'];
 
 function isFree(pricing) {
   if (!pricing) return false;
   const zero = (v) => v === '0' || v === 0 || v === '0.0';
   return zero(pricing.prompt) && zero(pricing.completion);
+}
+
+// True only if the model produces TEXT output — excludes audio/image/video
+// generators (e.g. Google Lyria, which is a music model) that have no business
+// in a text-summarization picker.
+function outputsText(m) {
+  const arch = m.architecture || {};
+  if (Array.isArray(arch.output_modalities)) return arch.output_modalities.includes('text');
+  if (typeof arch.modality === 'string') {
+    const out = arch.modality.includes('->') ? arch.modality.split('->').pop() : arch.modality;
+    return out.includes('text');
+  }
+  return true; // unknown shape — don't over-filter
 }
 
 // Returns [{ id, name, provider, contextLength }] — never throws (offline => []).
@@ -29,7 +42,7 @@ function fetchFreeModels() {
           const free = list
             .filter((m) => {
               const provider = String(m.id || '').split('/')[0];
-              return isFree(m.pricing) && ALLOWED_PROVIDERS.includes(provider);
+              return isFree(m.pricing) && ALLOWED_PROVIDERS.includes(provider) && outputsText(m);
             })
             .map((m) => ({
               id: m.id,
@@ -45,4 +58,4 @@ function fetchFreeModels() {
   });
 }
 
-module.exports = { fetchFreeModels, ALLOWED_PROVIDERS, isFree };
+module.exports = { fetchFreeModels, ALLOWED_PROVIDERS, isFree, outputsText };

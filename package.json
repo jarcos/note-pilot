@@ -31,7 +31,8 @@
     "publish": {
       "provider": "github",
       "owner": "jarcos",
-      "repo": "note-pilot"
+      "repo": "note-pilot",
+      "releaseType": "release"
     },
     "files": [
       "src/**/*",

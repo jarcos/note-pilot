@@ -53,8 +53,11 @@ echo "==> [3/4] Build, sign, notarize, and publish (DMG + zip + latest-mac.yml)"
 export GH_TOKEN="$(gh auth token)"
 npx electron-builder --mac --arm64 --publish always
 
-echo "==> [4/4] Attach the whisper bundle to the release"
+echo "==> [4/4] Attach the whisper bundle + publish the release"
 gh release upload "$VERSION" "$WHISPER_TAR#whisper-cli-macos-arm64.tar.gz" --clobber
+# Ensure the release is published (not a draft) and marked Latest, so
+# releases/latest/download/... resolves and electron-updater can see it.
+gh release edit "$VERSION" --draft=false --latest
 
 echo ""
 echo "Done. Signed + notarized release: https://github.com/jarcos/note-pilot/releases/tag/$VERSION"

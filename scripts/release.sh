@@ -47,7 +47,7 @@ WHISPER_TAR="$ROOT/dist-whisper/whisper-cli-macos-arm64.tar.gz"
 [ -f "$WHISPER_TAR" ] || { echo "whisper bundle missing"; exit 1; }
 
 echo "==> [2/4] Install deps"
-npm install
+npm install --silent --no-audit --no-fund 2>/dev/null
 
 echo "==> [3/4] Build, sign, notarize, and publish (DMG + zip + latest-mac.yml)"
 export GH_TOKEN="$(gh auth token)"

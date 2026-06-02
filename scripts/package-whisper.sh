@@ -24,8 +24,13 @@ cd "$WORK/whisper.cpp"
 # GGML_NATIVE=OFF -> portable baseline (don't tune for the build machine's exact
 # CPU), so the binary runs across all Apple Silicon generations, not just this one.
 # Metal does the heavy lifting, so the CPU-tuning loss is negligible.
-cmake -B build -DGGML_METAL=ON -DBUILD_SHARED_LIBS=ON -DGGML_NATIVE=OFF >/dev/null
-cmake --build build -j --config Release >/dev/null
+# Send build output (incl. harmless CMake/OpenMP warnings) to a log; surface it
+# only if the build actually fails.
+LOG="$WORK/build.log"
+cmake -B build -DGGML_METAL=ON -DBUILD_SHARED_LIBS=ON -DGGML_NATIVE=OFF >"$LOG" 2>&1 \
+  || { echo "cmake configure failed — see $LOG:"; tail -25 "$LOG"; exit 1; }
+cmake --build build -j --config Release >>"$LOG" 2>&1 \
+  || { echo "cmake build failed — see $LOG:"; tail -25 "$LOG"; exit 1; }
 BIN="$(find build -name whisper-cli -type f | head -1)"
 [ -x "$BIN" ] || { echo "build failed: whisper-cli not found"; exit 1; }
 
@@ -81,7 +86,4 @@ echo "==> 5/5 Smoke test + package"
 ./whisper-cli --help >/dev/null 2>&1 && echo "   bundle runs standalone OK" || echo "   WARN: standalone run failed — inspect otool -L whisper-cli"
 TAR="$OUT/whisper-cli-macos-arm64.tar.gz"
 tar -czf "$TAR" -C "$STAGE" .
-echo ""
-echo "Done: $TAR"
-echo "Next: create a GitHub Release and upload this file as an asset named"
-echo "      whisper-cli-macos-arm64.tar.gz (the app fetches releases/latest/download/<that>)."
+echo "   bundle: $TAR"

@@ -341,6 +341,12 @@ $('settingsShow').onchange = (e) => { $('settingsKey').type = e.target.checked ?
 $('getKeyLink').onclick = (e) => { e.preventDefault(); api.openExternal('https://openrouter.ai/keys'); };
 $('settingsSave').onclick = async () => {
   const v = $('settingsKey').value.trim();
+  if (v && !v.startsWith('sk-or-')) {
+    const st = $('keyStatus');
+    st.className = 'key-status none';
+    st.textContent = 'That doesn’t look like an OpenRouter key — it should start with “sk-or-”. Paste only the key (tip: tick “Show key”).';
+    return; // keep the dialog open
+  }
   if (v) await api.setApiKey(v);
   await api.setModel($('settingsModel').value);
   setStatus('Settings saved.');

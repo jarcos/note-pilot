@@ -1,6 +1,6 @@
 {
   "name": "note-pilot",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Turn lecture recordings into transcripts, summaries, and structured study notes. Local Whisper + OpenRouter.",
   "main": "src/main/index.js",
   "author": "José",

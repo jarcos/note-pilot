@@ -29,6 +29,11 @@ command -v gh >/dev/null || { echo "gh not found"; exit 1; }
 security find-identity -v -p codesigning | grep -q "Developer ID Application" \
   || { echo "No 'Developer ID Application' certificate in Keychain. Create one in Xcode → Settings → Accounts → Manage Certificates."; exit 1; }
 : "${APPLE_ID:?set APPLE_ID}"; : "${APPLE_APP_SPECIFIC_PASSWORD:?set APPLE_APP_SPECIFIC_PASSWORD}"; : "${APPLE_TEAM_ID:?set APPLE_TEAM_ID}"
+case "$APPLE_APP_SPECIFIC_PASSWORD" in
+  *PASTE-YOUR*) echo "APPLE_APP_SPECIFIC_PASSWORD is still the placeholder — edit .env.release and paste a real app-specific password (appleid.apple.com → Sign-In & Security → App-Specific Passwords)."; exit 1;;
+esac
+[[ "$APPLE_APP_SPECIFIC_PASSWORD" =~ ^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$ ]] \
+  || echo "  ⚠️  Warning: password doesn't match Apple's xxxx-xxxx-xxxx-xxxx format — notarization may fail."
 
 echo "==> [0/4] Sync package.json version to $NUM"
 npm version "$NUM" --no-git-tag-version --allow-same-version >/dev/null

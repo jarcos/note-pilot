@@ -10,6 +10,7 @@ const { transcribe } = require('./whisper');
 const { downloadModel, modelExists, downloadVadModel, vadModelExists,
         downloadWhisperCli } = require('./model');
 const { publicSettings, writeConfig, getApiKey, getModel } = require('./config');
+const { fetchFreeModels } = require('./models');
 const { generate } = require('./generate');
 const { buildHtml, transcriptToMarkdown, exportPdf, exportDocx } = require('./export');
 const db = require('./db');
@@ -194,6 +195,11 @@ ipcMain.handle('settings:setKey', (_evt, key) => {
   writeConfig({ openRouterKey: (key || '').trim() });
   return publicSettings();
 });
+ipcMain.handle('settings:setModel', (_evt, model) => {
+  writeConfig({ model: model || 'openrouter/free' });
+  return publicSettings();
+});
+ipcMain.handle('models:listFree', () => fetchFreeModels());
 
 // --- IPC: export (PDF / DOCX) ---
 ipcMain.handle('export:run', async (_evt, { lectureId, kind, format }) => {

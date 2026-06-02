@@ -301,6 +301,37 @@ async function openSettings() {
   $('settingsShow').checked = false;
   settingsOverlay.classList.remove('hidden');
   input.focus();
+
+  populateModels(s.model);
+}
+
+// Fill the model dropdown from OpenRouter's free models (no key needed).
+async function populateModels(currentModel) {
+  const sel = $('settingsModel');
+  // reset to just the Auto option
+  [...sel.querySelectorAll('optgroup, option:not([value="openrouter/free"])')].forEach((o) => o.remove());
+  const models = await api.listModels();
+  const byProvider = {};
+  for (const m of models) (byProvider[m.provider] ||= []).push(m);
+  for (const prov of Object.keys(byProvider)) {
+    const og = document.createElement('optgroup');
+    og.label = prov;
+    for (const m of byProvider[prov]) {
+      const o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = m.name + (m.contextLength ? ` · ${Math.round(m.contextLength / 1000)}k ctx` : '');
+      og.appendChild(o);
+    }
+    sel.appendChild(og);
+  }
+  // Preserve a previously-saved model even if it's not in the current free list.
+  if (currentModel && currentModel !== 'openrouter/free'
+      && ![...sel.options].some((o) => o.value === currentModel)) {
+    const o = document.createElement('option');
+    o.value = currentModel; o.textContent = `${currentModel} (saved)`;
+    sel.appendChild(o);
+  }
+  sel.value = currentModel || 'openrouter/free';
 }
 function closeSettings() { settingsOverlay.classList.add('hidden'); }
 
@@ -310,7 +341,9 @@ $('settingsShow').onchange = (e) => { $('settingsKey').type = e.target.checked ?
 $('getKeyLink').onclick = (e) => { e.preventDefault(); api.openExternal('https://openrouter.ai/keys'); };
 $('settingsSave').onclick = async () => {
   const v = $('settingsKey').value.trim();
-  if (v) { await api.setApiKey(v); setStatus('API key saved.'); }
+  if (v) await api.setApiKey(v);
+  await api.setModel($('settingsModel').value);
+  setStatus('Settings saved.');
   closeSettings();
 };
 $('settingsRemove').onclick = async () => {

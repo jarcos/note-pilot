@@ -98,6 +98,7 @@
     .modal-label { font-size:.8rem; font-weight:600; display:block; margin-bottom:.35rem; }
     .modal-card input[type=password], .modal-card input[type=text] { width:100%; padding:.6rem .65rem;
       border:1px solid var(--line); border-radius:8px; font-size:.95rem; font-family:ui-monospace,monospace; }
+    .modal-card select { width:100%; padding:.55rem .6rem; border:1px solid var(--line); border-radius:8px; font-size:.9rem; background:#fff; }
     .show-row { display:flex; align-items:center; gap:.35rem; font-size:.8rem; color:var(--muted); margin-top:.5rem; }
     .get-key { font-size:.85rem; margin-top:1rem; color:var(--muted); }
     .get-key a { color:var(--blue); cursor:pointer; text-decoration:none; }
@@ -200,6 +201,11 @@
       <input id="settingsKey" type="password" placeholder="sk-or-..." autocomplete="off" spellcheck="false" />
       <label class="show-row"><input type="checkbox" id="settingsShow" /> Show key</label>
       <div id="getKeyRow" class="get-key">Don't have one yet? <a href="#" id="getKeyLink">Create a free key at openrouter.ai →</a></div>
+
+      <label class="modal-label" for="settingsModel" style="margin-top:1.1rem">Model for summaries &amp; notes</label>
+      <select id="settingsModel"><option value="openrouter/free">Auto — best available free model</option></select>
+      <div class="get-key">Free models only. The list loads from OpenRouter without needing a key.</div>
+
       <div class="actions">
         <button id="settingsRemove" class="ghost danger hidden">Remove key</button>
         <span class="spacer"></span>

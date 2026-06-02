@@ -192,7 +192,8 @@ ipcMain.handle('external:open', (_evt, url) => {
 // --- IPC: settings ---
 ipcMain.handle('settings:get', () => publicSettings());
 ipcMain.handle('settings:setKey', (_evt, key) => {
-  writeConfig({ openRouterKey: (key || '').trim() });
+  // Keep only printable ASCII — discards pasted whitespace / terminal glyphs.
+  writeConfig({ openRouterKey: String(key || '').replace(/[^\x21-\x7E]/g, '') });
   return publicSettings();
 });
 ipcMain.handle('settings:setModel', (_evt, model) => {

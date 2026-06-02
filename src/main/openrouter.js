@@ -8,14 +8,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * @returns {Promise<string>} assistant message content
  */
 async function chat({ apiKey, model, messages, maxTokens = 1200, temperature = 0.2, maxRetries = 4 }) {
-  if (!apiKey) throw new Error('No OpenRouter API key set. Add it in Settings.');
+  // Strip anything that isn't a printable ASCII key character. Guards against
+  // pasted whitespace / terminal glyphs (which otherwise crash header encoding).
+  const key = String(apiKey || '').replace(/[^\x21-\x7E]/g, '');
+  if (!key) throw new Error('No OpenRouter API key set. Add it in Settings.');
 
   let attempt = 0;
   for (;;) {
     const res = await fetch(URL, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://github.com/josearcos/note-pilot',
         'X-Title': 'Note Pilot',

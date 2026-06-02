@@ -7,16 +7,22 @@
 # Requirements:
 #   - Developer ID Application cert installed (Xcode → Accounts → Manage Certificates)
 #   - gh authenticated; cmake, ffmpeg, node installed
-#   - Notarization env vars set:
-#       export APPLE_ID="you@example.com"
-#       export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
-#       export APPLE_TEAM_ID="ABCDE12345"
+#   - Notarization credentials, EITHER exported as env vars OR (easier) placed in
+#     a gitignored .env.release file (see .env.release.example):
+#       APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
 #
 # Usage:  bash scripts/release.sh v0.1.3
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 VERSION="${1:-v0.1.0}"; NUM="${VERSION#v}"
+
+# Load notarization credentials from a gitignored .env.release if present, so you
+# don't have to re-export them every terminal session. Real env vars still win.
+if [ -f "$ROOT/.env.release" ]; then
+  echo "==> Loading credentials from .env.release"
+  set -a; . "$ROOT/.env.release"; set +a
+fi
 
 echo "==> Preflight"
 command -v gh >/dev/null || { echo "gh not found"; exit 1; }

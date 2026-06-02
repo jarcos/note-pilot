@@ -17,6 +17,7 @@ dist-whisper/
 # Secrets & local state
 config.json
 .env
+.env.release
 
 *.log
 .DS_Store
